@@ -30,7 +30,34 @@ router.post('/signup', async (req, res) => {
     }
 });
 
-// Login Route
+// // Login Route
+// router.post('/login', async (req, res) => {
+//     const { email, password } = req.body;
+
+//     try {
+//         let user = await User.findOne({ email });
+//         if (!user) return res.status(400).json({ msg: 'Invalid credentials ' });
+
+//         // console.log('Entered password:', password);
+//         // console.log('Stored hashed password:', user.password);
+
+
+//         const isMatch = await bcrypt.compare(password.trim(), user.password);
+//         // console.log('Password comparison result:', isMatch);
+//         // bcrypt.hash('test', 10).then(hash => console.log('Hash of test:', hash));
+
+
+
+//         if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+
+//         res.status(200).json({ msg: 'Login successful', email: user.email });
+//     } catch (error) {
+//         res.status(500).send('Server error');
+//     }
+// });
+
+// new login route avoiding extra console logs
+
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -38,101 +65,102 @@ router.post('/login', async (req, res) => {
         let user = await User.findOne({ email });
         if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password.trim(), user.password);
         if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
 
         res.status(200).json({ msg: 'Login successful', email: user.email });
     } catch (error) {
+        // Send a generic error message, do not expose sensitive information
         res.status(500).send('Server error');
     }
 });
 
 // Forgot Password Route
 const transporter = nodemailer.createTransport({
-  service: 'Gmail',
-  auth: {
-      user: 'umar.zangroups@gmail.com',
-      pass: 'fbpo tnrk yaqr uvgz',
-  },
+    service: 'Gmail',
+    auth: {
+        user: 'umar.zangroups@gmail.com',
+        pass: 'fbpo tnrk yaqr uvgz',
+    },
 });
 
 // Forgot Password Route
 router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
+    const { email } = req.body;
 
-  try {
-      const user = await User.findOne({ email });
-      if (!user) {
-          return res.status(404).json({ msg: 'User not found' });
-      }
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
 
-      // Generate a reset token
-      const resetToken = crypto.randomBytes(20).toString('hex');
+        // Generate a reset token
+        const resetToken = crypto.randomBytes(20).toString('hex');
 
-      // Hash the token and set expiration (1 hour)
-      const resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-      const resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
+        // Hash the token and set expiration (1 hour)
+        const resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
 
-      user.resetPasswordToken = resetPasswordToken;
-      user.resetPasswordExpire = resetPasswordExpire;
-      await user.save();
+        user.resetPasswordToken = resetPasswordToken;
+        user.resetPasswordExpire = resetPasswordExpire;
+        await user.save();
 
-      // Send the reset link via email
-      const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
-      const message = `You are receiving this email because you (or someone else) requested a password reset. Click the link to reset your password: \n\n ${resetUrl}`;
-      
-      await transporter.sendMail({
-          to: email,
-          subject: 'Password Reset Request',
-          text: message,
-      });
+        // Send the reset link via email
+        const resetUrl = `http://18.212.250.251:3000/reset-password/${resetToken}`;
+        const message = `You are receiving this email because you (or someone else) requested a password reset. Click the link to reset your password: \n\n ${resetUrl}`;
 
-      res.status(200).json({ msg: 'Password reset email sent' });
-  } catch (err) {
-      console.error(err);
-      res.status(500).json({ msg: 'Server error' });
-  }
+        await transporter.sendMail({
+            to: email,
+            subject: 'Password Reset Request',
+            text: message,
+        });
+
+        res.status(200).json({ msg: 'Password reset email sent' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ msg: 'Server error' });
+    }
 });
 
 // Reset Password Route
 router.post('/reset-password/:token', async (req, res) => {
-  const { password } = req.body;
+    const { password } = req.body;
 
-  try {
-      // Hash the incoming token and find the user with the matching reset token and check if it's not expired
-      const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+    try {
+        // Hash the incoming token and find the user with the matching reset token and check if it's not expired
+        const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
 
-      const user = await User.findOne({
-          resetPasswordToken,
-          resetPasswordExpire: { $gt: Date.now() }, // Make sure the token is not expired
-      });
+        const user = await User.findOne({
+            resetPasswordToken,
+            resetPasswordExpire: { $gt: Date.now() }, // Make sure the token is not expired
+        });
 
-      if (!user) {
-          return res.status(400).json({ msg: 'Invalid or expired token' });
-      }
+        if (!user) {
+            return res.status(400).json({ msg: 'Invalid or expired token' });
+        }
 
-      // Hash the new password
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
+        // Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
 
-      // Reset the token and expiration fields
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpire = undefined;
+        // Reset the token and expiration fields
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
 
-      await user.save();
+        await user.save();
 
-      res.status(200).json({ msg: 'Password reset successful' });
-  } catch (err) {
-      console.error(err);
-      res.status(500).json({ msg: 'Server error' });
-  }
+        res.status(200).json({ msg: 'Password reset successful' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ msg: 'Server error' });
+    }
 });
 router.get('/user/:email', async (req, res) => {
     const { email } = req.params;
     try {
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ msg: 'User not found' });
-        
+
         // Return user data without password
         const { password, ...userData } = user._doc; // Exclude password from response
         res.status(200).json(userData);
@@ -206,7 +234,7 @@ router.post('/upload-profile-picture', upload.single('profilePicture'), async (r
 // Contact Us Route
 router.post('/contact-us', async (req, res) => {
     const request = req.body;
-    
+
     // Create the formdata object from the request
     const formdata = {
         firstName: request.firstName,
@@ -220,10 +248,10 @@ router.post('/contact-us', async (req, res) => {
         // Create a new contact entry and save it to the database
         const contactEntry = new ContactUs(formdata);
         const savedEntry = await contactEntry.save(); // Save to the database and get the saved entry
-        
+
         // Send email using the saved entry
-        await sendEmail(savedEntry); 
-        
+        await sendEmail(savedEntry);
+
         // Return the saved entry as a response
         res.status(200).json({ message: 'Contact details saved successfully and email sent!', data: savedEntry });
     } catch (error) {
