@@ -155,6 +155,8 @@ router.post('/reset-password/:token', async (req, res) => {
         res.status(500).json({ msg: 'Server error' });
     }
 });
+
+
 router.get('/user/:email', async (req, res) => {
     const { email } = req.params;
     try {
