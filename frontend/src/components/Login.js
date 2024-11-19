@@ -31,7 +31,27 @@ const Login = () => {
 
     const onChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+    // const onSubmit = async (e) => {
+    //     e.preventDefault();
+    //     setLoading(true);
+    //     try {
+    //         const res = await login(formData);
+    //         //setAlert({ type: 'success', message: 'Login successful!' });
+    //         console.log(res);
+    //         localStorage.setItem('userEmail', res.email);
+    //         navigate('/Dashboard');  // Ensure route is defined
+    //         setFormData({ email: '', password: '' });  // Clear form after success
+    //     } catch (err) {
+    //         //setAlert({ type: 'error', message: 'Login failed. Please try again.' });
+    //         setError(err.response?.data?.msg || 'Error logging in');
+    //         console.error(error.response.data);
+    //     }finally {
+    //         setLoading(false);
+    //       }
+    // };
+
     const onSubmit = async (e) => {
+<<<<<<< HEAD
         e.preventDefault();
         setLoading(true);
         try {
@@ -50,6 +70,27 @@ const Login = () => {
           }
     };
     
+=======
+      e.preventDefault();
+      setLoading(true);
+      try {
+          const res = await login(formData);  // Assuming login is the function that hits the API
+          localStorage.setItem('userEmail', res.email);
+          navigate('/Dashboard');  // Ensure this route is correct
+          setFormData({ email: '', password: '' });  // Clear form after success
+      } catch (err) {
+          // Check if the error is a 400 response and set a custom error message
+          if (err.response && err.response.status === 400) {
+              setError('Invalid credentials');  // Custom error message
+          } else {
+              setError('Something went wrong. Please try again later.');
+          }
+          // Do not log the error to the console
+      } finally {
+          setLoading(false);
+      }
+  };
+>>>>>>> d89f8ef42a238e579f5f00e9b2207f6c5cf24707
 
     return (
         <div>

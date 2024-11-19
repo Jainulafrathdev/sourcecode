@@ -14,7 +14,11 @@ export default function Portfolio() {
     const fetchPortfolio = async () => {
       if (!email) return;
       try {
+<<<<<<< HEAD
         const response = await axios.get('api/portfolio', {
+=======
+        const response = await axios.get('http://18.212.250.251:5000/api/portfolio', {
+>>>>>>> d89f8ef42a238e579f5f00e9b2207f6c5cf24707
           params: { userId: email }
         });
         setPortfolio(response.data);
@@ -32,7 +36,11 @@ export default function Portfolio() {
     }
     
     try {
+<<<<<<< HEAD
       await axios.delete(`api/portfolio/${symbol}`, {
+=======
+      await axios.delete(`http://18.212.250.251:5000/api/portfolio/${symbol}`, {
+>>>>>>> d89f8ef42a238e579f5f00e9b2207f6c5cf24707
         params: { userId: email }
       });
       

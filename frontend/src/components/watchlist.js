@@ -14,7 +14,11 @@ export default function Watchlist() {
     const fetchWatchlist = async () => {
       if (!email) return;
       try {
+<<<<<<< HEAD
         const response = await axios.get('api/watchlist', {
+=======
+        const response = await axios.get('http://18.212.250.251:5000/api/watchlist', {
+>>>>>>> d89f8ef42a238e579f5f00e9b2207f6c5cf24707
           params: { userId: email }
         });
         setWatchlist(response.data);
@@ -32,7 +36,11 @@ export default function Watchlist() {
     }
     
     try {
+<<<<<<< HEAD
       await axios.delete(`api/watchlist/${symbol}`, {
+=======
+      await axios.delete(`http://18.212.250.251s:5000/api/watchlist/${symbol}`, {
+>>>>>>> d89f8ef42a238e579f5f00e9b2207f6c5cf24707
         params: { userId: email }
       });
       

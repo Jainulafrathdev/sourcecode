@@ -261,7 +261,11 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
   }
 
     try {
+<<<<<<< HEAD
       await axios.post('api/portfolio', {
+=======
+      await axios.post('http://18.212.250.251:5000/api/portfolio', {
+>>>>>>> d89f8ef42a238e579f5f00e9b2207f6c5cf24707
         userId: user.email,
         symbol: stock.symbol,
         price: stock.price,
@@ -303,7 +307,11 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
   }
   
     try {
+<<<<<<< HEAD
       await axios.post('api/watchlist', {
+=======
+      await axios.post('http://18.212.250.251:5000/api/watchlist', {
+>>>>>>> d89f8ef42a238e579f5f00e9b2207f6c5cf24707
         userId: user.email,
         symbol: stock.symbol,
         price: stock.price,
