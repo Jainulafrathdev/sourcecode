@@ -10,6 +10,7 @@ const path = require('path');
 const ContactUs = require('../models/contactusdetails');
 const sendEmail = require('./emailservice');
 
+
 // Signup Route
 router.post('/signup', async (req, res) => {
     const { name, email, password, confirmPassword } = req.body;
@@ -47,9 +48,12 @@ router.post('/login', async (req, res) => {
 
         res.status(200).json({ msg: 'Login successful', email: user.email });
     } catch (error) {
-        res.status(500).send('Server error');
+        // Log the error server-side but don't send it to the client
+        console.error(error);  // This will log the error on the server side for debugging
+        res.status(500).send('Server error');  // Only send a generic server error message to the client
     }
 });
+
 
 // Forgot Password Route
 const transporter = nodemailer.createTransport({
@@ -237,5 +241,45 @@ router.post('/contact-us', async (req, res) => {
         res.status(500).json({ message: 'Error saving contact details or sending email.' });
     }
 });
+
+
+router.get('/api/check-stock', async (req, res) => {
+    const { userId, stockSymbol } = req.query;
+    try {
+        const watchlist = await WatchlistModel.findOne({ userId, stockSymbol });
+        const portfolio = await PortfolioModel.findOne({ userId, stockSymbol });
+
+        res.status(200).json({
+            inWatchlist: !!watchlist,
+            inPortfolio: !!portfolio,
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Something went wrong' });
+    }
+});
+
+
+// Get portfolio data for a user
+router.get('/portfolio/:email', async (req, res) => {
+    try {
+      const portfolio = await Portfolio.find({ userId: req.params.email });
+      res.json(portfolio);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Server Error');
+    }
+  });
+
+
+  // Get watchlist data for a user
+router.get('/watchlist/:email', async (req, res) => {
+    try {
+      const watchlist = await Watchlist.find({ userId: req.params.email });
+      res.json(watchlist);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Server Error');
+    }
+  });
 
 module.exports = router;

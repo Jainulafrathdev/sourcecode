@@ -68,6 +68,11 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
   const [user, setUser] = useState({});
   const [isAddedToPortfolio, setIsAddedToPortfolio] = useState(false);
   const [isAddedToWatchlist, setIsAddedToWatchlist] = useState(false);
+  const [currentView, setCurrentView] = useState('watchlist');
+
+  // Define state variables
+  const [portfolio, setPortfolio] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
 
 
   const navigate = useNavigate(); // Initialize useNavigate
@@ -137,6 +142,18 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
         try {
           const userData = await getUserData(email);
           setUser(userData);
+
+           // Fetch portfolio and watchlist data
+        const portfolioResponse = await axios.get(`/api/portfolio/${email}`);
+        const watchlistResponse = await axios.get(`/api/watchlist/${email}`);
+        // console.log('Portfolio data:', portfolioResponse.data);
+        // console.log('Watchlist data:', watchlistResponse.data);
+
+       
+
+        setPortfolio(portfolioResponse.data || []); // Example state: portfolio
+        setWatchlist(watchlistResponse.data || []); // Example state: watchlist
+
         } catch (error) {
           console.error('Error fetching user data:', error);
         }
@@ -144,6 +161,23 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
       fetchData();
     }
   }, [email]);
+
+  const checkPortfolio = (symbol) => {
+    return Array.isArray(portfolio) && portfolio.some((item) => item.symbol === symbol);
+  };
+  
+  const checkWatchlist = (symbol) => {
+    return Array.isArray(watchlist) && watchlist.some((item) => item.symbol === symbol);
+  };
+  
+  
+  // Update UI based on portfolio/watchlist status
+  useEffect(() => {
+    if (stock) {
+      setIsAddedToPortfolio(checkPortfolio(stock.symbol));
+      setIsAddedToWatchlist(checkWatchlist(stock.symbol));
+    }
+  }, [stock]);
 
   const fetchStockData = async (symbol,name) => {
     setLoading(true);
@@ -202,7 +236,7 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
   const handleSuggestionClick = (symbol,name) => {
     setSearchSymbol(symbol.replace('.NSE', '')); 
     setSuggestions([]);
-    console.log(symbol, name)
+    //console.log(symbol, name)
     // navigate(`/stock/${symbol}`, { state: { name,logos } }); // Navigate to stock detail page
   };
 
@@ -217,7 +251,14 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
       console.error('Stock data missing');
       setError('Stock data is required to add to portfolio');
       return;
-    }
+    };
+
+    // Check if the stock is already in the portfolio
+  const isStockInPortfolio = checkPortfolio(stock.symbol);
+  if (isStockInPortfolio) {
+    setError('Stock is already in your portfolio');
+    return;
+  }
 
     try {
       await axios.post('api/portfolio', {
@@ -231,6 +272,10 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
 
       addToPortfolio(stock);
       setIsAddedToPortfolio(true);
+
+      // Update the portfolio state directly after successful addition
+    setPortfolio((prevPortfolio) => [...prevPortfolio, stock]);
+      
     } catch (error) {
       console.error('Error adding to portfolio:', error);
       setError('Error adding stock to portfolio');
@@ -249,6 +294,13 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
       setError("Stock data is required to add to watchlist");
       return;
     }
+
+     // Check if the stock is already in the watchlist
+  const isStockInWatchlist = checkWatchlist(stock.symbol);
+  if (isStockInWatchlist) {
+    setError('Stock is already in your watchlist');
+    return;
+  }
   
     try {
       await axios.post('api/watchlist', {
@@ -268,11 +320,32 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
     }
   };
 
+  const removeFromPortfolio = (stockToRemove) => {
+  setPortfolio((prevPortfolio) =>
+    prevPortfolio.filter((stock) => stock.symbol !== stockToRemove.symbol)
+  );
+};
+
+const removeFromWatchlist = (stockToRemove) => {
+  setWatchlist((prevWatchlist) =>
+    prevWatchlist.filter((stock) => stock.symbol !== stockToRemove.symbol)
+  );
+};
+
+
   const handleNavigateToStockDetails = (symbol,name) =>{
     console.log(companies.name)
     console.log(symbol)
     navigate(`/stock/${symbol}`, { state: { name } });
   }
+
+  // Function to handle the view switch
+const handleViewSwitch = (view) => {
+  setCurrentView(view); // Update the current view (watchlist or portfolio)
+};
+
+
+
 
   return (
     <div className="App">
@@ -356,6 +429,146 @@ const Dashboard = ({ addToPortfolio, addToWatchlist }) => {
       <Footer />
     </div>
   );
+  // return (
+  //   <div className="App">
+  //     <Header />
+  //     {/* Main Content */}
+  //     <div className="main-content">
+  //       <div className="stock-container">
+  //         <h1 className="stock-search-title">Stock Search</h1>
+  //         <form className="search-form" onSubmit={handleSearch}>
+  //           <input
+  //             type="text"
+  //             className="search-input"
+  //             value={searchSymbol}
+  //             onChange={handleInputChange}
+  //             placeholder="Search for a stock symbol..."
+  //           />
+  //           <button className="search-button" type="submit">Search</button>
+  //         </form>
+  
+  //         {suggestions.length > 0 && (
+  //           <ul className="suggestions">
+  //             {suggestions.map((company, index) => (
+  //               <li
+  //                 key={index}
+  //                 className="suggestion-item"
+  //                 onClick={() => handleSuggestionClick(company.symbol, company.name)}
+  //               >
+  //                 <img
+  //                   src={company.logos}
+  //                   alt={`${company.name} logo`}
+  //                   className="company-logo"
+  //                 />
+  //                 {company.symbol.replace('.NSE', '')} - {company.name}
+  //               </li>
+  //             ))}
+  //           </ul>
+  //         )}
+  
+  //         {loading && <p>Loading...</p>}
+  //         {error && <p>{error}</p>}
+  //         {stock && (
+  //           <table className="stock-table">
+  //             <thead>
+  //               <tr>
+  //                 <th className="stock-header">Symbol</th>
+  //                 <th className="stock-header">Price</th>
+  //                 <th className="stock-header">Change</th>
+  //                 <th className="stock-header">Change (%)</th>
+  //                 <th className="stock-header">Last Updated</th>
+  //                 <th className="stock-header">Actions</th>
+  //               </tr>
+  //             </thead>
+  //             <tbody>
+  //               <tr>
+  //                 <td
+  //                   onClick={() =>
+  //                     handleNavigateToStockDetails(stock.symbol, stock.name)
+  //                   }
+  //                   className="stock-symbol"
+  //                 >
+  //                   {stock.symbol}
+  //                 </td>
+  //                 <td
+  //                   onClick={() =>
+  //                     handleNavigateToStockDetails(stock.symbol, stock.name)
+  //                   }
+  //                   className="stock-price"
+  //                 >
+  //                   ₹{stock.price}
+  //                 </td>
+  //                 <td
+  //                   onClick={() =>
+  //                     handleNavigateToStockDetails(stock.symbol, stock.name)
+  //                   }
+  //                   className="stock-change"
+  //                 >
+  //                   {stock.change}
+  //                 </td>
+  //                 <td
+  //                   onClick={() =>
+  //                     handleNavigateToStockDetails(stock.symbol, stock.name)
+  //                   }
+  //                   className="stock-change-percent"
+  //                 >
+  //                   {stock.changePercent}
+  //                 </td>
+  //                 <td
+  //                   onClick={() =>
+  //                     handleNavigateToStockDetails(stock.symbol, stock.name)
+  //                   }
+  //                   className="last-updated"
+  //                 >
+  //                   {stock.lastUpdated}
+  //                 </td>
+  //                 <td className="icon-cell">
+  //                   {/* Portfolio Action */}
+  //                   {portfolio.some((item) => item.symbol === stock.symbol) ? (
+  //                     <i
+  //                       className="fa-solid fa-check"
+  //                       style={{ color: 'green' }}
+  //                       title="In Portfolio"
+  //                       onClick={() => removeFromPortfolio(stock)}
+  //                       // style={{ cursor: 'pointer' }}
+  //                     ></i>
+  //                   ) : (
+  //                     <i
+  //                       className="fa-regular fa-address-card"
+  //                       title="Add to Portfolio"
+  //                       onClick={() => addToPortfolio(stock)}
+  //                       style={{ cursor: 'pointer' }}
+  //                     ></i>
+  //                   )}
+  
+  //                   {/* Watchlist Action */}
+  //                   {watchlist.some((item) => item.symbol === stock.symbol) ? (
+  //                     <i
+  //                       className="fa-solid fa-star"
+  //                       style={{ color: 'gold', marginLeft: '10px' }}
+  //                       title="In Watchlist"
+  //                       onClick={() => removeFromWatchlist(stock)}
+  //                       style={{ cursor: 'pointer' }}
+  //                     ></i>
+  //                   ) : (
+  //                     <i
+  //                       className="fa-regular fa-star"
+  //                       title="Add to Watchlist"
+  //                       onClick={() => addToWatchlist(stock)}
+  //                       style={{ cursor: 'pointer', marginLeft: '10px' }}
+  //                     ></i>
+  //                   )}
+  //                 </td>
+  //               </tr>
+  //             </tbody>
+  //           </table>
+  //         )}
+  //       </div>
+  //     </div>
+  //     <Footer />
+  //   </div>
+  // );
+  
 };
 
 export default Dashboard;

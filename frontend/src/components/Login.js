@@ -44,11 +44,12 @@ const Login = () => {
         } catch (err) {
             //setAlert({ type: 'error', message: 'Login failed. Please try again.' });
             setError(err.response?.data?.msg || 'Error logging in');
-            console.error(error.response.data);
+            //console.error(error.response.data);
         }finally {
             setLoading(false);
           }
     };
+    
 
     return (
         <div>
